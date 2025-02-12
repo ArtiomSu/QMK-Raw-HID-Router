@@ -131,8 +131,8 @@ void handle_packet(struct qmk_hid_packet *packet, uint16_t index_from){
 			packet->to_vid = devs[index_from].vid;
 
 			//printf("Sending Packet:\n");
-			//print_packet(&packet);    
-			int res = hid_write(devs[i].handle, (unsigned char *)&packet, RAW_EPSIZE);
+			//print_packet(packet);    
+			int res = hid_write(devs[i].handle, (unsigned char *)packet, RAW_EPSIZE);
 #endif
 
 			if (res < 0) {
