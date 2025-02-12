@@ -38,7 +38,11 @@ void find_devices(struct qmk_hid_device **ds){
 				(*ds)[i].vid = cur_dev->vendor_id;
 				(*ds)[i].pid = cur_dev->product_id;
 				num_found++;
+//#ifdef _WIN32
+//				(*ds)[i].handle = hid_open((*ds)[i].vid, (*ds)[i].pid, NULL);
+//#else
 				(*ds)[i].handle = hid_open_path((*ds)[i].path);
+//#endif
 				if(!(*ds)[i].handle){
 					fprintf(stderr,"Unable to open device %02X:%02X %s\n", (*ds)[i].pid, (*ds)[i].vid, cur_dev->product_string);
 				}
@@ -97,11 +101,40 @@ void handle_packet(struct qmk_hid_packet *packet, uint16_t index_from){
 				break;	
 			}
 			found = true;
+#ifdef _WIN32
+			struct qmk_hid_packet pack;
+			pack.header = packet->header;
+			pack.to_pid = devs[index_from].pid;
+			pack.to_vid = devs[index_from].vid;
+			pack.operation = packet->operation;
+			pack.payload_length = packet->payload_length;
+
+			for(int i=0; i<HID_PACKET_PAYLOAD_LEN -2; i++){
+				//buf[i] = packet->payload[i];
+				pack.payload[i] = packet->payload[i];
+			}
+
+			uint8_t buff[RAW_EPSIZE+1];
+			uint8_t *squash = (uint8_t *)&pack;
+
+			buff[0]=0x0; // report id must be the very first thing. only for windows I think. This was the main problem for me anyway..
+			for(int i=1; i<RAW_EPSIZE+1; i++){
+				buff[i] = squash[i-1];
+			}
+
+	
+			//printf("Sending Packet:\n");
+			//print_packet(&pack);    
+			int res = hid_write(devs[i].handle, (unsigned char *)&buff, RAW_EPSIZE+1);
+#else
 			packet->to_pid = devs[index_from].pid;
 			packet->to_vid = devs[index_from].vid;
+
 			//printf("Sending Packet:\n");
-			//print_packet(packet);    
-			int res = hid_write(devs[i].handle, (unsigned char *)packet, RAW_EPSIZE);
+			//print_packet(&packet);    
+			int res = hid_write(devs[i].handle, (unsigned char *)&packet, RAW_EPSIZE);
+#endif
+
 			if (res < 0) {
 				fprintf(stderr, "Unable to write(): %ls\n", hid_error(devs[i].handle));
 			}
@@ -145,7 +178,11 @@ void run_router(){
 				}
 			}
 		}
+#ifdef _WIN32
+		Sleep(DELAY_BETWEEN_LOOP);
+#else
 		usleep(DELAY_BETWEEN_LOOP*1000);
+#endif
 		refresh++;
 		if(refresh > REFRESH_DEVICES_INTERVAL){
 			if(log_other_stuff){

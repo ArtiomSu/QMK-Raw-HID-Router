@@ -1,2 +1,6 @@
 qmk_hid_router
 .vscode
+hidapi-win
+hidapi-win.zip
+qmk_hid_router.exe
+hidapi.dll

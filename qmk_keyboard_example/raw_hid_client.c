@@ -1,5 +1,4 @@
 #include "raw_hid_client.h"
-#include "sharedDefines.h"
                                     //vid, pid
 //struct raw_hid_client trackball = {0x9000, 0x9001};
 
@@ -12,6 +11,15 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
     struct hid_packet *packet = (struct hid_packet *)data;
 
     if(packet->header != HID_PACKET_HEADER){
+    char c[8];
+        SEND_STRING("header is bad ");
+        snprintf(c, sizeof(c), "%X ", packet->header);
+        SEND_STRING(c);
+
+        for (int i = 0; i < length; i++){
+            snprintf(c, sizeof(c), "%02X", data[i]);
+            SEND_STRING(c);
+        }
         return;
     }
 

@@ -23,7 +23,7 @@
 #define QMK_RAW_USAGE_PAGE 0xFF60
 #define QMK_RAW_USAGE 0x61
 #define HID_PACKET_HEADER 0xfeed
-#define HID_PACKET_PAYLOAD_LEN 24
+#define HID_PACKET_PAYLOAD_LEN 23
 
 struct qmk_hid_device
 {

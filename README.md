@@ -50,21 +50,45 @@ Without any command line arguements, the only thing you will see is error messag
 
 You will also need to install hidapi.
 
-### Linux
+## Linux
 
 ```sh
 pacman -Sy hidapi
 ```
+### Compiling on linux
 
-### Macos W.I.P.
+```sh
+
+gcc qmk_hid_router.c qmk_hid_router_utilities.c qmk_hid_router_protocol.c -o qmk_hid_router -I/usr/include/hidapi -lhidapi-hidraw && ./qmk_hid_router
+```
+
+## Macos
 
 ```sh
 brew install hidapi
 ```
 
-### Windows (W.I.P. need to check this myself) 
+### Compiling on Macos
 
-you will need to download it or something [here](https://github.com/libusb/hidapi/releases)
+```sh
+gcc qmk_hid_router.c qmk_hid_router_utilities.c qmk_hid_router_protocol.c -o qmk_hid_router -I/opt/homebrew/include/hidapi -L/opt/homebrew/lib -lhidapi
+```
+
+## Windows (W.I.P. need to check this myself) 
+
+you will need to download the zip [here](https://github.com/libusb/hidapi/releases) and extract it into the project into `hidapi-win` folder
+
+Then using [chocolatey](https://chocolatey.org/install) install `choco install mingw` (this is to get gcc on windows)
+
+Make sure your pid and vid is completely different between your devices otherwise windows will ignore one of them.
+
+### Compiling on Windows
+
+```sh
+gcc qmk_hid_router.c qmk_hid_router_utilities.c qmk_hid_router_protocol.c -o qmk_hid_router -I./hidapi-win/include -L./hidapi-win/x64 -lhidapi
+```
+You will need to have `hidapi.dll` in the same folder as the exe otherwise it won't run. The .dll is found in the first zip inside `x64` folder, so you can just move it to wherever your .exe is.
+
 
 # Installing on QMK Devices
 
@@ -102,24 +126,9 @@ sudo udevadm control --reload-rules
 sudo udevadm trigger
 ```
 
-# Compiling on linux
-
-```sh
-
-gcc qmk_hid_router.c qmk_hid_router_utilities.c qmk_hid_router_protocol.c -o qmk_hid_router -I/usr/include/hidapi -lhidapi-hidraw && ./qmk_hid_router
-```
-
-# Compiling on Windows W.I.P.
-
-# Compiling on Macos W.I.P.
-
 # Videos
 
-### dev build series
-
 ### Installation
-
-### Configuring Your own to use this.
 
 # References
 
