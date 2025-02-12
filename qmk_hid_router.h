@@ -43,6 +43,10 @@ struct qmk_hid_packet
 	uint8_t payload[HID_PACKET_PAYLOAD_LEN]; 
 };
 
+enum operation {
+    HID_RAW_OP_INFO = 0xee, // for sending info to pc
+};
+
 void print_devices_struct(struct qmk_hid_device *ds);
 void print_device(struct hid_device_info *cur_dev);
 void print_all_devices();

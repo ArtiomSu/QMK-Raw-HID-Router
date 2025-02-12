@@ -1,4 +1,9 @@
 {
+    "usb": {
+        "vid": "0xF11D",
+        "pid": "0xF00D",
+        "device_version": "0.0.1"
+    },
     "features": {
         "raw": true
     }

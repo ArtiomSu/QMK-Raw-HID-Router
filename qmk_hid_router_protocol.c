@@ -75,7 +75,7 @@ void find_devices(struct qmk_hid_device **ds){
 
 void handle_packet_for_pc(struct qmk_hid_packet *packet, uint16_t index_from){
 	//info opeation
-	if(packet->operation == 0xee){
+	if(packet->operation == HID_RAW_OP_INFO){
 		printf("INFO: From %02X:%02X %s\n", devs[index_from].vid, devs[index_from].pid, packet->payload);
 	}
 }
@@ -95,17 +95,32 @@ void handle_packet(struct qmk_hid_packet *packet, uint16_t index_from){
 	}
 
 	bool found = false;
+	bool is_broadcast = packet->to_pid == 0xffff && packet->to_vid == 0xffff;
 	for(int i=0; i<qmk_hid_device_count; i++){
-		if(devs[i].pid == packet->to_pid && devs[i].vid == packet->to_vid ){
+		if(
+			is_broadcast ||
+			(devs[i].pid == packet->to_pid && devs[i].vid == packet->to_vid )
+		){
+			if(i == index_from && is_broadcast){
+				continue;
+			}
 			if(!devs[i].handle){
+				if(is_broadcast){
+					continue;
+				}
 				break;	
 			}
 			found = true;
+
+			if(!is_broadcast){
+				packet->to_pid = devs[index_from].pid;
+				packet->to_vid = devs[index_from].vid;
+			}
 #ifdef _WIN32
 			struct qmk_hid_packet pack;
 			pack.header = packet->header;
-			pack.to_pid = devs[index_from].pid;
-			pack.to_vid = devs[index_from].vid;
+			pack.to_pid = packet->to_pid;
+			pack.to_vid = packet->to_vid; 
 			pack.operation = packet->operation;
 			pack.payload_length = packet->payload_length;
 
@@ -127,10 +142,8 @@ void handle_packet(struct qmk_hid_packet *packet, uint16_t index_from){
 			//print_packet(&pack);    
 			int res = hid_write(devs[i].handle, (unsigned char *)&buff, RAW_EPSIZE+1);
 #else
-			packet->to_pid = devs[index_from].pid;
-			packet->to_vid = devs[index_from].vid;
 
-			//printf("Sending Packet:\n");
+			//printf("Sending Packet from %02X:%02X\n", devs[index_from].pid, devs[index_from].vid);
 			//print_packet(packet);    
 			int res = hid_write(devs[i].handle, (unsigned char *)packet, RAW_EPSIZE);
 #endif
@@ -138,11 +151,13 @@ void handle_packet(struct qmk_hid_packet *packet, uint16_t index_from){
 			if (res < 0) {
 				fprintf(stderr, "Unable to write(): %ls\n", hid_error(devs[i].handle));
 			}
-			break;
+			if(!is_broadcast){
+				break;
+			}
 		}
 	}
 
-	if(!found){
+	if(!found && !is_broadcast){
 		fprintf(stderr,"Cannot write to device %02X:%02X as it is closed\n", packet->to_vid, packet->to_pid);
 	}
 }

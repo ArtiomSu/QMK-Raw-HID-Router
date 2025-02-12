@@ -6,6 +6,8 @@ For example if you want to change the dpi/scroll speed of your qmk mouse/trackba
 
 You can also use this to send some stuff to the pc, like controlling stuff in obs for example if you don't want to use normal key combos. Currently sending info strings to the pc is supported. This is handy to see for example what dpi setting you are on.
 
+You can also send a broadcast message from one qmk device to the rest of the qmk devices. This saves the need to send multiple packets from the qmk firmware if you want to send a message to many devices.
+
 Written in C since qmk firmware is also using C so its easier to keep track of things and reuse code. 
 
 ```txt
@@ -74,7 +76,7 @@ brew install hidapi
 gcc qmk_hid_router.c qmk_hid_router_utilities.c qmk_hid_router_protocol.c -o qmk_hid_router -I/opt/homebrew/include/hidapi -L/opt/homebrew/lib -lhidapi
 ```
 
-## Windows (W.I.P. need to check this myself) 
+## Windows
 
 you will need to download the zip [here](https://github.com/libusb/hidapi/releases) and extract it into the project into `hidapi-win` folder
 
@@ -117,7 +119,6 @@ sudo chmod 644 /usr/lib/udev/rules.d/99-usb-qmk-raw-hid.rules
 inside the file put in
 ```
 KERNEL=="hidraw*", SUBSYSTEM=="hidraw", MODE="0666", TAG+="uaccess", TAG+="udev-acl"
-
 ```
 
 then 
@@ -125,6 +126,26 @@ then
 sudo udevadm control --reload-rules
 sudo udevadm trigger
 ```
+
+# Routing protocol
+The router generally forwards packets as is. However there are some packets that are treated differently.
+
+The picos can only accept raw hid packets that are 32 bytes in length, this is how it is in qmk for picos. Other mcus can handle 64 bytes so you can update the code here to support that, but I just use picos for everything.
+
+You must follow the `qmk_hid_packet` structure defined in `qmk_hid_router.h`.
+
+The `payload` and `operation` can be whatever you want just make sure the qmk devices understand each other. The router doesn't look at the `operation` unless its `HID_RAW_OP_INFO` which will then just display the message from the qmk device on the pc.
+
+when the router receives a packet and forwards it to another qmk device it will change the `to_vid` and `to_pid` to the qmk device that sent the packet. This way the qmk device receiving the packet knows who sent it and you can write logic to only accept packets from 1 specific device for example. Its done this way so that you have 4 more bytes available for the payload otherwise it would take up more fields in the structure.
+
+you can specify custom pid and vid for your qmk device inside the `keyboard.json`, this acts almost like a mac address in this protocol so make sure that all of your devices are unique. And make sure you specify the qmk raw hid usage and usage page inside `config.h`, you can use a custom usage page if you want but make sure you update it everywhere and make sure none of your other usb devices are using the same usage page otherwise it could break the actuall device. 
+
+### Special PIDs and VIDs
+
+On the topic of vid and pid, there are special pids and vids for example if you use `struct raw_hid_client pc = {0x0000, 0x0000};` this will be handled by the pc instead of forwarding it, this is where the info packet comes from.
+
+And if you use `struct raw_hid_client broadcast = {0xffff, 0xffff};` this will broadcast the packet amongst all qmk devices in this case the `to_vid` and `to_pid` remains unchanged from `0xffff` this is so that the qmk device can be configured to ignore broadcasts otherwise it would think its a direct packet. This isn't the best since now the device doesn't know who the packet is from, but I think its an ok compromise to have more bytes available in the payload.
+
 
 # Videos
 
