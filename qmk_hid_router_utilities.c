@@ -68,3 +68,13 @@ void signal_handler(int signum) {
     cleanup();
     exit(0);
 }
+
+long long current_time_millis() {
+#ifdef _WIN32
+	return GetTickCount64();
+#else
+	struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (tv.tv_sec * 1000LL) + (tv.tv_usec / 1000);
+#endif
+}

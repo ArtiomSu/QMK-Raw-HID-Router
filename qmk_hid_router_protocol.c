@@ -6,6 +6,8 @@ struct qmk_hid_device *devs = NULL;
 bool loop = true;
 bool log_all_packets = false;
 bool log_other_stuff = false;
+bool allow_refresh = true;
+uint32_t sleep_duration;
 
 void find_devices(struct qmk_hid_device **ds){
 	qmk_hid_device_count = 0;
@@ -38,11 +40,9 @@ void find_devices(struct qmk_hid_device **ds){
 				(*ds)[i].vid = cur_dev->vendor_id;
 				(*ds)[i].pid = cur_dev->product_id;
 				num_found++;
-//#ifdef _WIN32
-//				(*ds)[i].handle = hid_open((*ds)[i].vid, (*ds)[i].pid, NULL);
-//#else
+
 				(*ds)[i].handle = hid_open_path((*ds)[i].path);
-//#endif
+
 				if(!(*ds)[i].handle){
 					fprintf(stderr,"Unable to open device %02X:%02X %s\n", (*ds)[i].pid, (*ds)[i].vid, cur_dev->product_string);
 				}
@@ -117,27 +117,12 @@ void handle_packet(struct qmk_hid_packet *packet, uint16_t index_from){
 				packet->to_vid = devs[index_from].vid;
 			}
 #ifdef _WIN32
-			struct qmk_hid_packet pack;
-			pack.header = packet->header;
-			pack.to_pid = packet->to_pid;
-			pack.to_vid = packet->to_vid; 
-			pack.operation = packet->operation;
-			pack.payload_length = packet->payload_length;
-
-			for(int i=0; i<HID_PACKET_PAYLOAD_LEN -2; i++){
-				//buf[i] = packet->payload[i];
-				pack.payload[i] = packet->payload[i];
-			}
-
 			uint8_t buff[RAW_EPSIZE+1];
-			uint8_t *squash = (uint8_t *)&pack;
 
 			buff[0]=0x0; // report id must be the very first thing. only for windows I think. This was the main problem for me anyway..
-			for(int i=1; i<RAW_EPSIZE+1; i++){
-				buff[i] = squash[i-1];
-			}
 
-	
+			memcpy(&buff[1], packet, RAW_EPSIZE);
+
 			//printf("Sending Packet:\n");
 			//print_packet(&pack);    
 			int res = hid_write(devs[i].handle, (unsigned char *)&buff, RAW_EPSIZE+1);
@@ -164,7 +149,8 @@ void handle_packet(struct qmk_hid_packet *packet, uint16_t index_from){
 
 void run_router(){
     int i, res;
-	uint16_t refresh = 0;
+	long long last_refresh_ts = current_time_millis();
+	uint32_t trigger_interval = 10000;
 	unsigned char buf[RAW_EPSIZE];
 	devs = malloc(qmk_hid_device_capacity * sizeof(struct qmk_hid_device));
 	memset(devs, 0, qmk_hid_device_capacity * sizeof(struct qmk_hid_device));
@@ -194,16 +180,18 @@ void run_router(){
 			}
 		}
 #ifdef _WIN32
-		Sleep(DELAY_BETWEEN_LOOP);
+		Sleep(sleep_duration);
 #else
-		usleep(DELAY_BETWEEN_LOOP*1000);
+		usleep(sleep_duration*1000);
 #endif
-		refresh++;
-		if(refresh > REFRESH_DEVICES_INTERVAL){
+		if(current_time_millis() - last_refresh_ts  >= trigger_interval){
+			last_refresh_ts = current_time_millis();
+			if(!allow_refresh){
+				continue;
+			}
 			if(log_other_stuff){
 				printf("Refreshing devices\n");
 			}
-			refresh = 0;
 			for (int i = 0; i < qmk_hid_device_count; i++) {
 				free(devs[i].path);
 				if (devs[i].handle) {

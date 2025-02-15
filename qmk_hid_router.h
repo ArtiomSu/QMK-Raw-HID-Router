@@ -15,10 +15,10 @@
 	#include <windows.h>
 #else
 	#include <unistd.h>
+	#include <sys/time.h>
 #endif
 
-#define DELAY_BETWEEN_LOOP 100 // ms
-#define REFRESH_DEVICES_INTERVAL 200 // after 20 seconds 
+#define DELAY_BETWEEN_LOOP 10 // ms
 #define RAW_EPSIZE 32
 #define QMK_RAW_USAGE_PAGE 0xFF60
 #define QMK_RAW_USAGE 0x61
@@ -55,6 +55,7 @@ void print_packet(struct qmk_hid_packet *packet);
 void print_packet_compact(struct qmk_hid_packet *packet);
 void cleanup();
 void signal_handler(int signum);
+long long current_time_millis();
 void handle_packet(struct qmk_hid_packet *packet, uint16_t index_from);
 void run_router();
 
@@ -64,5 +65,7 @@ extern struct qmk_hid_device *devs;
 extern bool loop;
 extern bool log_all_packets;
 extern bool log_other_stuff;
+extern bool allow_refresh;
+extern uint32_t sleep_duration;
 
 #endif

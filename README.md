@@ -2,6 +2,8 @@
 
 This is a router program that facilitates communication between qmk devices which are using the raw hid feature.
 
+It is very efficient, using 0% cpu and 0.5MB RAM.
+
 For example if you want to change the dpi/scroll speed of your qmk mouse/trackball using your qmk keyboard. Or change other settings via one qmk device to another.
 
 You can also use this to send some stuff to the pc, like controlling stuff in obs for example if you don't want to use normal key combos. Currently sending info strings to the pc is supported. This is handy to see for example what dpi setting you are on.
@@ -16,7 +18,7 @@ Written in C since qmk firmware is also using C so its easier to keep track of t
    |   QMK Keyboard  |
    |                 |
    +--------+--------+
-            |
+            ^
             |  Data
             v
    +--------------------+
@@ -24,7 +26,7 @@ Written in C since qmk firmware is also using C so its easier to keep track of t
    | QMK RAW HID Router |
    |                    |
    +--------+-----------+
-            |
+            ^
             |  Forwarded Data
             v
    +-----------------+
@@ -34,19 +36,68 @@ Written in C since qmk firmware is also using C so its easier to keep track of t
    +-----------------+
 
 ```
+# Table of Contents
+
+- [Running](#running)
+- [Installing on PC](#installing-on-pc)
+  - [Linux](#linux)
+    - [Compiling on linux](#compiling-on-linux)
+  - [Macos](#macos)
+    - [Compiling on Macos](#compiling-on-macos)
+  - [Windows](#windows)
+    - [Compiling on Windows](#compiling-on-windows)
+- [Installing on QMK Devices](#installing-on-qmk-devices)
+- [Cannot open hid device on linux fix](#cannot-open-hid-device-on-linux-fix)
+- [Routing protocol](#routing-protocol)
+  - [Special PIDs and VIDs](#special-pids-and-vids)
+- [Videos](#videos)
+- [References](#references)
+
+
 # Running
 
 After going through the installations steps, you can check if its working by running
 
-`./qmk_hid_router --show` to see all of your devices
+```sh
+./qmk_hid_router --show
+```
+to see all of your devices
 
 If you are having some issues you can turn on logging which will help you see the raw packets.
 
-`./qmk_hid_router -vv`
+```sh
+./qmk_hid_router -vv
+```
 
-You can unplug and plugin devices as you please, the program handles hotswapping and refreshes the device list every 20 seconds. You can decrease it if you are removing and connecting devices regularly. 
+You can unplug and plugin devices as you please, the program handles hotswapping and refreshes the device list every 10 seconds. You can decrease it if you are removing and connecting devices regularly. 
 
 Without any command line arguements, the only thing you will see is error messages or info packets that are send specifically for the pc to display as text.
+
+You can change the latency by running.
+
+```sh
+./qmk_hid_router -r 1
+```
+
+In this case this will set the latency to 1 millisecond, which still doesn't have any load on the cpu. 10 milliseconds is the default which is more than enough, but if you want it faster can just set it as 1 and it will be fine.
+
+You can disable refreshing the device list with
+
+```sh
+./qmk_hid_router --no-refresh
+```
+Refreshing the device list on windows memory leaks slowly, so its best to use this. If you aren't disconnecting your devices often this won't make a big difference.
+
+```sh
+./qmk_hid_router --help
+```
+This will print the help menu.
+
+You can enable multiple options at once like so
+
+```sh
+./qmk_hid_router -vv -r 1 --no-refresh
+```
 
 # Installing on PC
 
@@ -83,6 +134,8 @@ you will need to download the zip [here](https://github.com/libusb/hidapi/releas
 Then using [chocolatey](https://chocolatey.org/install) install `choco install mingw` (this is to get gcc on windows)
 
 Make sure your pid and vid is completely different between your devices otherwise windows will ignore one of them.
+
+Windows binary can be found in the github releases as it takes alot of files to compile it unlike the other two OS's. If the binary doesn't work, you are probably missing some shared libraries so you will just have to compile it.
 
 ### Compiling on Windows
 
