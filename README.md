@@ -161,7 +161,7 @@ See video for more details, where I add this feature to the ploopy adept.
 
 [Dactyl Manuform Keyboard](https://github.com/ArtiomSu/qmk_firmware/tree/artiom_dactyl/keyboards/artiomsu_dactyl)
 
-[Ploopy Adept (Coming soon)](https://github.com/ArtiomSu/qmk_firmware/tree/artiomsu_ploopy_adept/keyboards/ploopy_adept)
+[Ploopy Adept](https://github.com/ArtiomSu/qmk_firmware/tree/artiomsu_ploopy_adept/keyboards/ploopy_adept)
 
 # Cannot open hid device on linux fix
 
@@ -202,7 +202,9 @@ And if you use `struct raw_hid_client broadcast = {0xffff, 0xffff};` this will b
 
 # Videos
 
-### Installation
+### Installation and Configuration
+
+[![installation video](https://img.youtube.com/vi/Ub4ZDhWJpAE/0.jpg)](https://www.youtube.com/watch?v=Ub4ZDhWJpAE)
 
 # References
 
